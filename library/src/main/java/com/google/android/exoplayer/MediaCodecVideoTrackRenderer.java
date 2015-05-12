@@ -135,6 +135,7 @@ public class MediaCodecVideoTrackRenderer extends MediaCodecTrackRenderer {
   private int lastReportedWidth;
   private int lastReportedHeight;
   private float lastReportedPixelWidthHeightRatio;
+  private int iVideoRotateDegree;
 
   /**
    * @param source The upstream source from which the renderer obtains samples.
@@ -251,6 +252,7 @@ public class MediaCodecVideoTrackRenderer extends MediaCodecTrackRenderer {
     lastReportedWidth = -1;
     lastReportedHeight = -1;
     lastReportedPixelWidthHeightRatio = -1;
+    iVideoRotateDegree = 0;
   }
 
   @Override
@@ -360,6 +362,12 @@ public class MediaCodecVideoTrackRenderer extends MediaCodecTrackRenderer {
   @Override
   protected void configureCodec(MediaCodec codec, String codecName,
       android.media.MediaFormat format, MediaCrypto crypto) {
+    if (format != null){
+      if (format.containsKey("rotation-degrees")){
+        int degree = format.getInteger("rotation-degrees");
+        iVideoRotateDegree = degree;
+      }
+    }
     codec.configure(format, surface, crypto, 0);
     codec.setVideoScalingMode(videoScalingMode);
   }
@@ -523,7 +531,10 @@ public class MediaCodecVideoTrackRenderer extends MediaCodecTrackRenderer {
     eventHandler.post(new Runnable()  {
       @Override
       public void run() {
-        eventListener.onVideoSizeChanged(currentWidth, currentHeight, currentPixelWidthHeightRatio);
+        if (iVideoRotateDegree == 90 || iVideoRotateDegree == 270)
+          eventListener.onVideoSizeChanged(currentHeight, currentWidth, 1.0f / currentPixelWidthHeightRatio);
+        else
+          eventListener.onVideoSizeChanged(currentWidth, currentHeight, currentPixelWidthHeightRatio);
       }
     });
     // Update the last reported values.
