@@ -363,8 +363,8 @@ public class MediaCodecVideoTrackRenderer extends MediaCodecTrackRenderer {
   protected void configureCodec(MediaCodec codec, String codecName,
       android.media.MediaFormat format, MediaCrypto crypto) {
     if (format != null){
-      if (format.containsKey("rotation-degrees")){
-        int degree = format.getInteger("rotation-degrees");
+      if (format.containsKey(MediaFormat.KEY_ROTATION_DEGREES)){
+        int degree = format.getInteger(MediaFormat.KEY_ROTATION_DEGREES);
         iVideoRotateDegree = degree;
       }
     }

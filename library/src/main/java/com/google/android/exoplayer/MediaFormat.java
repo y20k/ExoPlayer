@@ -35,6 +35,9 @@ public class MediaFormat {
   private static final String KEY_PIXEL_WIDTH_HEIGHT_RATIO =
       "com.google.android.videos.pixelWidthHeightRatio";
 
+  public static final String KEY_ROTATION_DEGREES =
+      "rotation-degrees";
+
   public static final int NO_VALUE = -1;
 
   public final String mimeType;
@@ -252,7 +255,9 @@ public class MediaFormat {
       maybeSetFloatV16(format, KEY_PIXEL_WIDTH_HEIGHT_RATIO, pixelWidthHeightRatio);
       // We can find the rotation-degrees from ACodec, but it's not an open setting.
       // https://android.googlesource.com/platform/frameworks/av/+/android-5.0.1_r1/media/libstagefright/ACodec.cpp
-      maybeSetIntegerV16(format, "rotation-degrees", rotateDegree);
+      if (Util.SDK_INT >= 21) {
+        maybeSetIntegerV16(format, KEY_ROTATION_DEGREES, rotateDegree);
+      }
       for (int i = 0; i < initializationData.size(); i++) {
         format.setByteBuffer("csd-" + i, ByteBuffer.wrap(initializationData.get(i)));
       }
