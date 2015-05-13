@@ -38,6 +38,9 @@ public class MediaFormat {
   public static final String KEY_ROTATION_DEGREES =
       "rotation-degrees";
 
+  public static final String KEY_ROTATION_DEGREES_BY_APP =
+      "rotation-degrees-by-app";
+
   public static final int NO_VALUE = -1;
 
   public final String mimeType;
@@ -257,6 +260,8 @@ public class MediaFormat {
       // https://android.googlesource.com/platform/frameworks/av/+/android-5.0.1_r1/media/libstagefright/ACodec.cpp
       if (Util.SDK_INT >= 21) {
         maybeSetIntegerV16(format, KEY_ROTATION_DEGREES, rotateDegree);
+      } else {
+        maybeSetIntegerV16(format, KEY_ROTATION_DEGREES_BY_APP, rotateDegree);
       }
       for (int i = 0; i < initializationData.size(); i++) {
         format.setByteBuffer("csd-" + i, ByteBuffer.wrap(initializationData.get(i)));
