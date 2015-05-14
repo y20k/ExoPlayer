@@ -55,6 +55,11 @@ public class DummyTrackRenderer extends TrackRenderer {
   }
 
   @Override
+  public String[] getLanguage() {
+    return null;
+  }
+
+  @Override
   protected long getBufferedPositionUs() {
     throw new IllegalStateException();
   }

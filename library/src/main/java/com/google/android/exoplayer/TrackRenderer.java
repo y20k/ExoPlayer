@@ -345,6 +345,8 @@ public abstract class TrackRenderer implements ExoPlayerComponent {
    */
   protected abstract void seekTo(long positionUs) throws ExoPlaybackException;
 
+  public abstract String[] getLanguage();
+
   @Override
   public void handleMessage(int what, Object object) throws ExoPlaybackException {
     // Do nothing.

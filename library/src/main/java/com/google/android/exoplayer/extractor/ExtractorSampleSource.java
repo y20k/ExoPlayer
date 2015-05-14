@@ -160,7 +160,7 @@ public class ExtractorSampleSource implements SampleSource, ExtractorOutput, Loa
       maxTrackDurationUs = C.UNKNOWN_TIME_US;
       for (int i = 0; i < trackCount; i++) {
         MediaFormat format = sampleQueues.valueAt(i).getFormat();
-        trackInfos[i] = new TrackInfo(format.mimeType, format.durationUs);
+        trackInfos[i] = new TrackInfo(format.mimeType, format.durationUs, format.language);
         if (format.durationUs != C.UNKNOWN_TIME_US && format.durationUs > maxTrackDurationUs) {
           maxTrackDurationUs = format.durationUs;
         }

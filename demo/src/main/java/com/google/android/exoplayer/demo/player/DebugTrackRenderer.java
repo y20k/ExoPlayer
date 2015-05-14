@@ -97,6 +97,9 @@ import android.widget.TextView;
   }
 
   @Override
+  public String[] getLanguage() { return null; }
+
+  @Override
   protected long getBufferedPositionUs() {
     return TrackRenderer.END_OF_TRACK_US;
   }

@@ -227,6 +227,34 @@ public class TextTrackRenderer extends TrackRenderer implements Callback {
   }
 
   @Override
+  public String[] getLanguage() {
+    int trackCount = 0;
+    for (int i = 0; i < source.getTrackCount(); i++) {
+      if (handlesMimeType(source.getTrackInfo(i).mimeType)) trackCount++;
+    }
+    
+    String[] trackName = new String[trackCount];
+    int index = 0;
+    for (int i = 0; i < source.getTrackCount(); i++) {
+      if (handlesMimeType(source.getTrackInfo(i).mimeType))
+      {
+        trackName[index++] = source.getTrackInfo(i).language;
+      }
+    }
+    return trackName;
+  }
+
+  protected boolean handlesMimeType(String mimeType) {
+    for (int i = 0; i < subtitleParsers.length; i++) {
+      if (subtitleParsers[i].canParse(mimeType)) {
+          parserIndex = i;
+          return true;
+      }
+    }
+    return false;
+  }
+  
+  @Override
   protected long getBufferedPositionUs() {
     // Don't block playback whilst subtitles are loading.
     return END_OF_TRACK_US;

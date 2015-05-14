@@ -54,7 +54,7 @@ public class SingleSampleChunkSource implements ChunkSource {
     this.format = format;
     this.durationUs = durationUs;
     this.mediaFormat = mediaFormat;
-    trackInfo = new TrackInfo(format.mimeType, durationUs);
+    trackInfo = new TrackInfo(format.mimeType, durationUs, null);
   }
 
   @Override

@@ -135,7 +135,7 @@ public class SmoothStreamingChunkSource implements ChunkSource {
     this.liveEdgeLatencyUs = liveEdgeLatencyMs * 1000;
 
     StreamElement streamElement = getElement(initialManifest);
-    trackInfo = new TrackInfo(streamElement.tracks[0].format.mimeType, initialManifest.durationUs);
+    trackInfo = new TrackInfo(streamElement.tracks[0].format.mimeType, initialManifest.durationUs, null);
     evaluation = new Evaluation();
 
     TrackEncryptionBox[] trackEncryptionBoxes = null;

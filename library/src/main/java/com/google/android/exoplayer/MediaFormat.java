@@ -50,6 +50,7 @@ public class MediaFormat {
   public final int sampleRate;
 
   public final List<byte[]> initializationData;
+  public String language= null;
 
   private int maxWidth;
   private int maxHeight;

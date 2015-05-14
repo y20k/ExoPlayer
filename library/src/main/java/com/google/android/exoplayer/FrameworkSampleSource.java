@@ -145,7 +145,9 @@ public final class FrameworkSampleSource implements SampleSource {
         long durationUs = format.containsKey(android.media.MediaFormat.KEY_DURATION)
             ? format.getLong(android.media.MediaFormat.KEY_DURATION) : C.UNKNOWN_TIME_US;
         String mime = format.getString(android.media.MediaFormat.KEY_MIME);
-        trackInfos[i] = new TrackInfo(mime, durationUs);
+        String language = format.containsKey(android.media.MediaFormat.KEY_LANGUAGE)
+                ? format.getString(android.media.MediaFormat.KEY_LANGUAGE) : null;
+        trackInfos[i] = new TrackInfo(mime, durationUs, language);
       }
       prepared = true;
     }

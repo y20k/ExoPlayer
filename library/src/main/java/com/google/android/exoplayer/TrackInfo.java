@@ -30,14 +30,16 @@ public final class TrackInfo {
    */
   public final long durationUs;
 
+  public final String language;
   /**
    * @param mimeType The mime type.
    * @param durationUs The duration in microseconds, or {@link C#UNKNOWN_TIME_US} if the duration
    *     is unknown.
    */
-  public TrackInfo(String mimeType, long durationUs) {
+  public TrackInfo(String mimeType, long durationUs, String language) {
     this.mimeType = mimeType;
     this.durationUs = durationUs;
+    this.language = language;
   }
 
 }

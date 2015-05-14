@@ -460,6 +460,24 @@ public abstract class MediaCodecTrackRenderer extends TrackRenderer {
   }
 
   @Override
+  public String[] getLanguage() {
+    int trackCount = 0;
+    for (int i = 0; i < source.getTrackCount(); i++) {
+      if (handlesMimeType(source.getTrackInfo(i).mimeType)) trackCount++;
+    }
+    
+    String[] trackName = new String[trackCount];
+    int index = 0;
+    for (int i = 0; i < source.getTrackCount(); i++) {
+      if (handlesMimeType(source.getTrackInfo(i).mimeType))
+      {
+        trackName[index++] = source.getTrackInfo(i).language;
+      }
+    }
+    return trackName;
+  }
+
+  @Override
   protected long getBufferedPositionUs() {
     long sourceBufferedPosition = source.getBufferedPositionUs();
     return sourceBufferedPosition == UNKNOWN_TIME_US || sourceBufferedPosition == END_OF_TRACK_US

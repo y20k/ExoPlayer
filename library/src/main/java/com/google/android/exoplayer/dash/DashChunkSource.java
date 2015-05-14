@@ -197,7 +197,7 @@ public class DashChunkSource implements ChunkSource {
         adaptationSetIndex, representationIndices);
     long periodDurationUs = (representations[0].periodDurationMs == TrackRenderer.UNKNOWN_TIME_US)
         ? TrackRenderer.UNKNOWN_TIME_US : representations[0].periodDurationMs * 1000;
-    this.trackInfo = new TrackInfo(representations[0].format.mimeType, periodDurationUs);
+    this.trackInfo = new TrackInfo(representations[0].format.mimeType, periodDurationUs, null);
 
     this.formats = new Format[representations.length];
     this.representationHolders = new HashMap<String, RepresentationHolder>();

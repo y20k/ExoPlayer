@@ -182,6 +182,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
   private Surface surface;
   private InternalRendererBuilderCallback builderCallback;
   private TrackRenderer videoRenderer;
+  private TrackRenderer[] renderers;
   private Format videoFormat;
   private int videoTrackToRestore;
 
@@ -297,6 +298,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     }
     videoFormat = null;
     videoRenderer = null;
+    renderers = null;
     multiTrackSources = null;
     rendererBuildingState = RENDERER_BUILDING_STATE_BUILDING;
     maybeReportPlayerState();
@@ -328,6 +330,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
     // Complete preparation.
     this.trackNames = trackNames;
     this.videoRenderer = renderers[TYPE_VIDEO];
+    this.renderers = renderers;
     this.multiTrackSources = multiTrackSources;
     pushSurface(false);
     pushTrackSelection(TYPE_VIDEO, true);
@@ -409,6 +412,24 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
   @Override
   public void onPlayerStateChanged(boolean playWhenReady, int state) {
     maybeReportPlayerState();
+    if (renderers != null && playWhenReady == true && state == STATE_READY)
+    {
+        parseToTrackNames(TYPE_VIDEO);
+        parseToTrackNames(TYPE_AUDIO);
+        parseToTrackNames(TYPE_TEXT);
+    }
+  }
+
+  private void parseToTrackNames(int trackType) {
+    TrackRenderer renderer = renderers[trackType];
+    String[] Names = renderer.getLanguage();
+    if (Names != null) {
+        for(int i = 0 ; i < Names.length ; i++){
+          String name = Names[i];
+          if (name != null &&  trackNames[trackType][i] == null)
+            trackNames[trackType][i] = name;
+        }
+    }
   }
 
   @Override

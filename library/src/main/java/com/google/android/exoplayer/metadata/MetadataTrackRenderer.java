@@ -169,6 +169,10 @@ public class MetadataTrackRenderer<T> extends TrackRenderer implements Callback 
   }
 
   @Override
+  public String[] getLanguage() {
+    return null;
+  }
+  @Override
   protected long getCurrentPositionUs() {
     return currentPositionUs;
   }

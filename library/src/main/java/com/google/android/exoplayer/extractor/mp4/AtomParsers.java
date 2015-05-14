@@ -62,8 +62,11 @@ import java.util.List;
     Atom.ContainerAtom stbl = mdia.getContainerAtomOfType(Atom.TYPE_minf)
         .getContainerAtomOfType(Atom.TYPE_stbl);
 
-    long mediaTimescale = parseMdhd(mdia.getLeafAtomOfType(Atom.TYPE_mdhd).data);
+    Pair<Long, String> mdhdHeader = parseMdhd(mdia.getLeafAtomOfType(Atom.TYPE_mdhd).data);
+    long mediaTimescale = mdhdHeader.first;
+    String language = mdhdHeader.second;
     StsdDataHolder stsdData = parseStsd(stbl.getLeafAtomOfType(Atom.TYPE_stsd).data, durationUs);
+    stsdData.mediaFormat.language = language;
     return new Track(id, trackType, mediaTimescale, durationUs, stsdData.mediaFormat,
         stsdData.trackEncryptionBoxes, stsdData.nalUnitLengthFieldLength);
   }
@@ -312,13 +315,27 @@ import java.util.List;
    * @param mdhd The mdhd atom to parse.
    * @return The media timescale, defined as the number of time units that pass in one second.
    */
-  private static long parseMdhd(ParsableByteArray mdhd) {
+  public static Pair<Long,String> parseMdhd(ParsableByteArray mdhd) {
     mdhd.setPosition(Atom.HEADER_SIZE);
     int fullAtom = mdhd.readInt();
     int version = Atom.parseFullAtomVersion(fullAtom);
 
     mdhd.skipBytes(version == 0 ? 8 : 16);
-    return mdhd.readUnsignedInt();
+    long timescale = mdhd.readUnsignedInt();
+    mdhd.skipBytes(version == 0 ? 4 : 8);
+
+    //The langage value is a three letters ISO 639 language code.
+    //Each ACSII value of the letter should minus 0x60.
+    int packed_language = mdhd.readUnsignedShort();
+    int c = (packed_language &0x1F) + 0x60;
+    int b = ((packed_language >> 5) &0x1F) + 0x60;
+    int a = ((packed_language >> 10) &0x1F) + 0x60;
+    StringBuilder language = new StringBuilder();
+    language.append(Character.toString((char)a));
+    language.append(Character.toString((char)b));
+    language.append(Character.toString((char)c));
+
+    return new Pair(timescale, language.toString());
   }
 
   private static StsdDataHolder parseStsd(ParsableByteArray stsd, long durationUs) {

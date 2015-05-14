@@ -140,7 +140,8 @@ public class HlsSampleSource implements SampleSource, Loader.Callback {
         trackInfos = new TrackInfo[trackCount];
         for (int i = 0; i < trackCount; i++) {
           MediaFormat format = extractor.getMediaFormat(i);
-          trackInfos[i] = new TrackInfo(format.mimeType, chunkSource.getDurationUs());
+          //TODO: parse the HLS language tag.
+          trackInfos[i] = new TrackInfo(format.mimeType, chunkSource.getDurationUs(), null);
         }
         prepared = true;
         return true;

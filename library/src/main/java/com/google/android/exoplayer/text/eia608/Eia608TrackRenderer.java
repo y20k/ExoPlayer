@@ -184,6 +184,10 @@ public class Eia608TrackRenderer extends TrackRenderer implements Callback {
   }
 
   @Override
+  public String[] getLanguage() {
+    return null;
+  }
+  @Override
   protected long getCurrentPositionUs() {
     return currentPositionUs;
   }
