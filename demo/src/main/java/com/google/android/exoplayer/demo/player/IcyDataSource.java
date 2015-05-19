@@ -61,7 +61,7 @@ public class IcyDataSource extends DefaultHttpDataSource {
    * Actually returns the underlying stream or IcyInputStream.
    */
   @Override
-  protected InputStream getInputStream( HttpURLConnection conn ) throws Exception {
+  protected InputStream getInputStream( HttpURLConnection conn ) throws IOException {
     String smetaint = conn.getHeaderField( "icy-metaint" );
     InputStream ret = conn.getInputStream();
 

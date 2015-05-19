@@ -232,7 +232,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
     try {
       inputStream = getInputStream(connection);
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw new HttpDataSourceException(e, dataSpec);
     }
 
@@ -364,7 +364,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
    * Gets the input stream from the connection.
    * 
    */
-  protected InputStream getInputStream( HttpURLConnection connection ) throws Exception {
+  protected InputStream getInputStream( HttpURLConnection connection ) throws IOException {
     try {
       return connection.getInputStream();
     } catch (IOException e) {
