@@ -24,6 +24,7 @@ import com.google.android.exoplayer.demo.player.DemoPlayer;
 import com.google.android.exoplayer.demo.player.DemoPlayer.RendererBuilder;
 import com.google.android.exoplayer.demo.player.ExtractorRendererBuilder;
 import com.google.android.exoplayer.demo.player.HlsRendererBuilder;
+import com.google.android.exoplayer.demo.player.IcyDataSource;
 import com.google.android.exoplayer.demo.player.SmoothStreamingRendererBuilder;
 import com.google.android.exoplayer.demo.player.UnsupportedDrmException;
 import com.google.android.exoplayer.extractor.mp3.Mp3Extractor;
@@ -241,6 +242,9 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
       case DemoUtil.TYPE_TS:
         return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
             new TsExtractor(0, audioCapabilities));
+      case DemoUtil.TYPE_AAC_SHOUCAT:
+        return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
+                new AdtsExtractor(), new IcyDataSource(userAgent, null));
       case DemoUtil.TYPE_AAC:
         return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
             new AdtsExtractor());

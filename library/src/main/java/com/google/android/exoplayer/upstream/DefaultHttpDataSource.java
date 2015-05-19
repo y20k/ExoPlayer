@@ -231,9 +231,8 @@ public class DefaultHttpDataSource implements HttpDataSource {
     }
 
     try {
-      inputStream = connection.getInputStream();
-    } catch (IOException e) {
-      closeConnection();
+      inputStream = getInputStream(connection);
+    } catch (Exception e) {
       throw new HttpDataSourceException(e, dataSpec);
     }
 
@@ -322,7 +321,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
   /**
    * Establishes a connection, following redirects to do so where permitted.
    */
-  private HttpURLConnection makeConnection(DataSpec dataSpec) throws IOException {
+  protected HttpURLConnection makeConnection(DataSpec dataSpec) throws IOException {
     URL url = new URL(dataSpec.uri.toString());
     long position = dataSpec.position;
     long length = dataSpec.length;
@@ -361,6 +360,18 @@ public class DefaultHttpDataSource implements HttpDataSource {
     throw new NoRouteToHostException("Too many redirects: " + redirectCount);
   }
 
+  /**
+   * Gets the input stream from the connection.
+   * 
+   */
+  protected InputStream getInputStream( HttpURLConnection connection ) throws Exception {
+    try {
+      return connection.getInputStream();
+    } catch (IOException e) {
+      closeConnection();
+      throw new HttpDataSourceException(e, dataSpec);
+    }
+  }
   /**
    * Configures a connection, but does not open it.
    *

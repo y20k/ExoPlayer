@@ -148,6 +148,9 @@ import java.util.Locale;
     new Sample("Google Glass (WebM Video with Vorbis Audio)",
         "http://demos.webmproject.org/exoplayer/glass_vp9_vorbis.webm",
         DemoUtil.TYPE_WEBM),
+    new Sample("Shoutcast",
+                  "http://mobil.metal-only.de:8000/",
+                  DemoUtil.TYPE_AAC_SHOUCAT),
   };
 
   private Samples() {}

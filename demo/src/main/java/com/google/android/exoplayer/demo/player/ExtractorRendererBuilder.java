@@ -40,6 +40,7 @@ public class ExtractorRendererBuilder implements RendererBuilder {
   private final Uri uri;
   private final TextView debugTextView;
   private final Extractor extractor;
+  private final DataSource dataSource;
 
   public ExtractorRendererBuilder(String userAgent, Uri uri, TextView debugTextView,
       Extractor extractor) {
@@ -47,12 +48,20 @@ public class ExtractorRendererBuilder implements RendererBuilder {
     this.uri = uri;
     this.debugTextView = debugTextView;
     this.extractor = extractor;
+    this.dataSource = new DefaultUriDataSource(userAgent, null);
+  }
+  public ExtractorRendererBuilder(String userAgent, Uri uri, TextView debugTextView,
+      Extractor extractor, DataSource dataSource) {
+    this.userAgent = userAgent;
+    this.uri = uri;
+    this.debugTextView = debugTextView;
+    this.extractor = extractor;
+    this.dataSource = dataSource;
   }
 
   @Override
   public void buildRenderers(DemoPlayer player, RendererBuilderCallback callback) {
-    // Build the video and audio renderers.
-    DataSource dataSource = new DefaultUriDataSource(userAgent, null);
+
     ExtractorSampleSource sampleSource = new ExtractorSampleSource(uri, dataSource, extractor, 2,
         BUFFER_SIZE);
     MediaCodecVideoTrackRenderer videoRenderer = new MediaCodecVideoTrackRenderer(sampleSource,

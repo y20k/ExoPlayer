@@ -42,6 +42,7 @@ public class DemoUtil {
   public static final int TYPE_WEBM = 6;
   public static final int TYPE_TS = 7;
   public static final int TYPE_AAC = 8;
+  public static final int TYPE_AAC_SHOUCAT = 9;
 
   private static final CookieManager defaultCookieManager;
 
