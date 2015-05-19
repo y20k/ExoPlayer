@@ -107,6 +107,12 @@ public class Id3Parser implements MetadataParser<Map<String, Object>> {
             objectDataSize);
         metadata.put(GeobMetadata.TYPE, new GeobMetadata(mimeType, filename,
             description, objectData));
+      } else if (frameId0 == 'A' && frameId1 == 'P' && frameId2 == 'I' && frameId3 == 'C') {
+        byte[] frame = new byte[frameSize];
+        id3Data.readBytes(frame, 0, frameSize);
+        PicMetadata picMetadata = new PicMetadata((byte[])frame);
+
+        metadata.put(PicMetadata.TYPE, picMetadata);
       } else {
         String type = String.format("%c%c%c%c", frameId0, frameId1, frameId2, frameId3);
         byte[] frame = new byte[frameSize];

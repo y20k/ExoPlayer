@@ -32,6 +32,7 @@ import com.google.android.exoplayer.extractor.ts.AdtsExtractor;
 import com.google.android.exoplayer.extractor.ts.TsExtractor;
 import com.google.android.exoplayer.extractor.webm.WebmExtractor;
 import com.google.android.exoplayer.metadata.GeobMetadata;
+import com.google.android.exoplayer.metadata.PicMetadata;
 import com.google.android.exoplayer.metadata.PrivMetadata;
 import com.google.android.exoplayer.metadata.TxxxMetadata;
 import com.google.android.exoplayer.text.CaptionStyleCompat;
@@ -494,6 +495,10 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         Log.i(TAG, String.format("ID3 TimedMetadata %s: mimeType=%s, filename=%s, description=%s",
             GeobMetadata.TYPE, geobMetadata.mimeType, geobMetadata.filename,
             geobMetadata.description));
+      } else if (PicMetadata.TYPE.equals(entry.getKey())) {
+        PicMetadata picMetadata = (PicMetadata) entry.getValue();
+        Log.i(TAG, String.format("ID3 TimedMetadata %s: mimeType=%s",
+                PicMetadata.TYPE, picMetadata.mimeType));
       } else {
         Log.i(TAG, String.format("ID3 TimedMetadata %s", entry.getKey()));
       }
