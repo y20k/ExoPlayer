@@ -1,4 +1,4 @@
-// Copyright (C) 2014 The Android Open Source Project
+// Copyright (C) 2016 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,39 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    compileSdkVersion project.ext.compileSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 21
+        targetSdkVersion project.ext.targetSdkVersion
     }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+        debug {
+            jniDebuggable = true
+            debuggable = true
         }
     }
 
     lintOptions {
         abortOnError false
     }
+
+    productFlavors {
+        demo
+        demo_ext
+    }
 }
 
 dependencies {
     compile project(':library')
+    demo_extCompile project(path: ':extension-ffmpeg')
+    demo_extCompile project(path: ':extension-flac')
+    demo_extCompile project(path: ':extension-opus')
+    demo_extCompile project(path: ':extension-vp9')
 }

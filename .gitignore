@@ -1,6 +1,8 @@
 # Android generated
 bin
 gen
+libs
+obj
 lint.xml
 
 # IntelliJ IDEA
@@ -16,10 +18,12 @@ gen-external-apklibs
 .classpath
 .settings
 .checkstyle
+.cproject
 
 # Gradle
 .gradle
 build
+buildout
 out
 
 # Maven
@@ -37,3 +41,23 @@ proguard-project.txt
 .DS_Store
 dist
 tmp
+
+# VP9 extension
+extensions/vp9/src/main/jni/libvpx
+extensions/vp9/src/main/jni/libvpx_android_configs
+extensions/vp9/src/main/jni/libyuv
+
+# Opus extension
+extensions/opus/src/main/jni/libopus
+
+# FLAC extension
+extensions/flac/src/main/jni/flac
+
+# FFmpeg extension
+extensions/ffmpeg/src/main/jni/ffmpeg
+
+# Cronet extension
+extensions/cronet/jniLibs/*
+!extensions/cronet/jniLibs/README.md
+extensions/cronet/libs/*
+!extensions/cronet/libs/README.md
