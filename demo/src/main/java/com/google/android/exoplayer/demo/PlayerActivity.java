@@ -242,9 +242,12 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
       case DemoUtil.TYPE_TS:
         return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
             new TsExtractor(0, audioCapabilities));
-      case DemoUtil.TYPE_AAC_SHOUCAT:
+      case DemoUtil.TYPE_AAC_SHOUTCAST:
         return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
-                new AdtsExtractor(), new IcyDataSource(userAgent, null));
+            new AdtsExtractor(), new IcyDataSource(userAgent, null));
+      case DemoUtil.TYPE_MP3_SHOUTCAST:
+        return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
+            new Mp3Extractor(), new IcyDataSource(userAgent, null));
       case DemoUtil.TYPE_AAC:
         return new ExtractorRendererBuilder(userAgent, contentUri, debugTextView,
             new AdtsExtractor());
