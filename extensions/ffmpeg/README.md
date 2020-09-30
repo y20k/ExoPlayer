@@ -1,21 +1,27 @@
-# FfmpegAudioRenderer #
+# ExoPlayer FFmpeg extension #
 
-## Description ##
+The FFmpeg extension provides `FfmpegAudioRenderer`, which uses FFmpeg for
+decoding and can render audio encoded in a variety of formats.
 
-The FFmpeg extension is a [Renderer][] implementation that uses FFmpeg to decode
-audio.
+## License note ##
 
-[Renderer]: https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/Renderer.html
+Please note that whilst the code in this repository is licensed under
+[Apache 2.0][], using this extension also requires building and including one or
+more external libraries as described below. These are licensed separately.
 
-## Build instructions ##
+[Apache 2.0]: https://github.com/google/ExoPlayer/blob/release-v2/LICENSE
 
-* Checkout ExoPlayer along with Extensions
+## Build instructions (Linux, macOS) ##
 
-```
-git clone https://github.com/google/ExoPlayer.git
-```
+To use this extension you need to clone the ExoPlayer repository and depend on
+its modules locally. Instructions for doing this can be found in ExoPlayer's
+[top level README][]. The extension is not provided via JCenter (see [#2781][]
+for more information).
 
-* Set the following environment variables:
+In addition, it's necessary to manually build the FFmpeg library, so that gradle
+can bundle the FFmpeg binaries in the APK:
+
+* Set the following shell variable:
 
 ```
 cd "<path to exoplayer checkout>"
@@ -23,74 +29,107 @@ EXOPLAYER_ROOT="$(pwd)"
 FFMPEG_EXT_PATH="${EXOPLAYER_ROOT}/extensions/ffmpeg/src/main"
 ```
 
-* Download the [Android NDK][] and set its location in an environment variable:
-
-[Android NDK]: https://developer.android.com/tools/sdk/ndk/index.html
+* Download the [Android NDK][] and set its location in a shell variable.
+  This build configuration has been tested on NDK r20.
 
 ```
 NDK_PATH="<path to Android NDK>"
 ```
 
-* Fetch and build ffmpeg.
+* Set the host platform (use "darwin-x86_64" for Mac OS X):
 
-For example, to fetch and build for armv7a:
+```
+HOST_PLATFORM="linux-x86_64"
+```
+
+* Fetch FFmpeg and checkout an appropriate branch. We cannot guarantee
+  compatibility with all versions of FFmpeg. We currently recommend version 4.2:
+
+```
+cd "<preferred location for ffmpeg>" && \
+git clone git://source.ffmpeg.org/ffmpeg && \
+cd ffmpeg && \
+git checkout release/4.2 && \
+FFMPEG_PATH="$(pwd)"
+```
+
+* Configure the decoders to include. See the [Supported formats][] page for
+  details of the available decoders, and which formats they support.
+
+```
+ENABLED_DECODERS=(vorbis opus flac)
+```
+
+* Add a link to the FFmpeg source code in the FFmpeg extension `jni` directory.
 
 ```
 cd "${FFMPEG_EXT_PATH}/jni" && \
-git clone git://source.ffmpeg.org/ffmpeg ffmpeg && cd ffmpeg && \
-./configure \
-    --libdir=android-libs/armeabi-v7a \
-    --arch=arm \
-    --cpu=armv7-a \
-    --cross-prefix="${NDK_PATH}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-" \
-    --target-os=android \
-    --sysroot="${NDK_PATH}/platforms/android-9/arch-arm/" \
-    --extra-cflags="-march=armv7-a -mfloat-abi=softfp" \
-    --extra-ldflags="-Wl,--fix-cortex-a8" \
-    --extra-ldexeflags=-pie \
-    --disable-static \
-    --enable-shared \
-    --disable-doc \
-    --disable-programs \
-    --disable-everything \
-    --disable-avdevice \
-    --disable-avformat \
-    --disable-swscale \
-    --disable-postproc \
-    --disable-avfilter \
-    --disable-symver \
-    --enable-avresample \
-    --enable-decoder=vorbis \
-    --enable-decoder=opus \
-    --enable-decoder=flac \
-    && \
-make -j4 && \
-make install-libs
+ln -s "$FFMPEG_PATH" ffmpeg
 ```
 
-* Build the JNI native libraries.
+* Execute `build_ffmpeg.sh` to build FFmpeg for `armeabi-v7a`, `arm64-v8a`,
+  `x86` and `x86_64`. The script can be edited if you need to build for
+  different architectures:
 
 ```
-cd "${FFMPEG_EXT_PATH}"/jni && \
-${NDK_PATH}/ndk-build APP_ABI=armeabi-v7a -j4
+cd "${FFMPEG_EXT_PATH}/jni" && \
+./build_ffmpeg.sh \
+  "${FFMPEG_EXT_PATH}" "${NDK_PATH}" "${HOST_PLATFORM}" "${ENABLED_DECODERS[@]}"
 ```
 
-TODO: Add instructions for other ABIs.
+## Build instructions (Windows) ##
 
-* In your project, you can add a dependency on the extension by using a rule
-  like this:
+We do not provide support for building this extension on Windows, however it
+should be possible to follow the Linux instructions in [Windows PowerShell][].
 
-```
-// in settings.gradle
-include ':..:ExoPlayer:library'
-include ':..:ExoPlayer:extension-ffmpeg'
+[Windows PowerShell]: https://docs.microsoft.com/en-us/powershell/scripting/getting-started/getting-started-with-windows-powershell
 
-// in build.gradle
-dependencies {
-    compile project(':..:ExoPlayer:library')
-    compile project(':..:ExoPlayer:extension-ffmpeg')
-}
-```
+## Using the extension ##
 
-* Now, when you build your app, the extension will be built and the native
-  libraries will be packaged along with the APK.
+Once you've followed the instructions above to check out, build and depend on
+the extension, the next step is to tell ExoPlayer to use `FfmpegAudioRenderer`.
+How you do this depends on which player API you're using:
+
+* If you're passing a `DefaultRenderersFactory` to `SimpleExoPlayer.Builder`,
+  you can enable using the extension by setting the `extensionRendererMode`
+  parameter of the `DefaultRenderersFactory` constructor to
+  `EXTENSION_RENDERER_MODE_ON`. This will use `FfmpegAudioRenderer` for playback
+  if `MediaCodecAudioRenderer` doesn't support the input format. Pass
+  `EXTENSION_RENDERER_MODE_PREFER` to give `FfmpegAudioRenderer` priority over
+  `MediaCodecAudioRenderer`.
+* If you've subclassed `DefaultRenderersFactory`, add an `FfmpegAudioRenderer`
+  to the output list in `buildAudioRenderers`. ExoPlayer will use the first
+  `Renderer` in the list that supports the input media format.
+* If you've implemented your own `RenderersFactory`, return an
+  `FfmpegAudioRenderer` instance from `createRenderers`. ExoPlayer will use the
+  first `Renderer` in the returned array that supports the input media format.
+* If you're using `ExoPlayer.Builder`, pass an `FfmpegAudioRenderer` in the
+  array of `Renderer`s. ExoPlayer will use the first `Renderer` in the list that
+  supports the input media format.
+
+Note: These instructions assume you're using `DefaultTrackSelector`. If you have
+a custom track selector the choice of `Renderer` is up to your implementation,
+so you need to make sure you are passing an `FfmpegAudioRenderer` to the player,
+then implement your own logic to use the renderer for a given track.
+
+[top level README]: https://github.com/google/ExoPlayer/blob/release-v2/README.md
+[Android NDK]: https://developer.android.com/tools/sdk/ndk/index.html
+[#2781]: https://github.com/google/ExoPlayer/issues/2781
+[Supported formats]: https://exoplayer.dev/supported-formats.html#ffmpeg-extension
+
+## Using the extension in the demo application ##
+
+To try out playback using the extension in the [demo application][], see
+[enabling extension decoders][].
+
+[demo application]: https://exoplayer.dev/demo-application.html
+[enabling extension decoders]: https://exoplayer.dev/demo-application.html#enabling-extension-decoders
+
+## Links ##
+
+* [Troubleshooting using extensions][]
+* [Javadoc][]: Classes matching `com.google.android.exoplayer2.ext.ffmpeg.*`
+  belong to this module.
+
+[Troubleshooting using extensions]: https://exoplayer.dev/troubleshooting.html#how-can-i-get-a-decoding-extension-to-load-and-be-used-for-playback
+[Javadoc]: https://exoplayer.dev/doc/reference/index.html

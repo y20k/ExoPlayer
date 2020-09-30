@@ -15,60 +15,108 @@
  */
 package com.google.android.exoplayer2.testutil;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 import android.net.Uri;
+import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.testutil.FakeDataSet.FakeData;
+import com.google.android.exoplayer2.testutil.FakeDataSet.FakeData.Segment;
+import com.google.android.exoplayer2.upstream.BaseDataSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DataSourceException;
 import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 import java.util.ArrayList;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 /**
- * A fake {@link DataSource} capable of simulating various scenarios.
- * <p>
- * The data that will be read from the source can be constructed by calling
- * {@link Builder#appendReadData(byte[])}. Calls to {@link #read(byte[], int, int)} will not span
- * the boundaries between arrays passed to successive calls, and hence the boundaries control the
- * positions at which read requests to the source may only be partially satisfied.
- * <p>
- * Errors can be inserted by calling {@link Builder#appendReadError(IOException)}. An inserted error
- * will be thrown from the first call to {@link #read(byte[], int, int)} that attempts to read from
- * the corresponding position, and from all subsequent calls to {@link #read(byte[], int, int)}
- * until the source is closed. If the source is closed and re-opened having encountered an error,
- * that error will not be thrown again.
+ * A fake {@link DataSource} capable of simulating various scenarios. It uses a {@link FakeDataSet}
+ * instance which determines the response to data access calls.
  */
-public final class FakeDataSource implements DataSource {
+public class FakeDataSource extends BaseDataSource {
 
-  private final ArrayList<Segment> segments;
+  /**
+   * Factory to create a {@link FakeDataSource}.
+   */
+  public static class Factory implements DataSource.Factory {
+
+    protected @MonotonicNonNull FakeDataSet fakeDataSet;
+    protected boolean isNetwork;
+
+    public final Factory setFakeDataSet(FakeDataSet fakeDataSet) {
+      this.fakeDataSet = fakeDataSet;
+      return this;
+    }
+
+    public final Factory setIsNetwork(boolean isNetwork) {
+      this.isNetwork = isNetwork;
+      return this;
+    }
+
+    @Override
+    public FakeDataSource createDataSource() {
+      return new FakeDataSource(Assertions.checkStateNotNull(fakeDataSet), isNetwork);
+    }
+  }
+
+  private final FakeDataSet fakeDataSet;
   private final ArrayList<DataSpec> openedDataSpecs;
 
-  private final boolean simulateUnknownLength;
-  private final long totalLength;
-
-  private Uri uri;
-  private boolean opened;
+  @Nullable private Uri uri;
+  private boolean openCalled;
+  private boolean sourceOpened;
+  @Nullable private FakeData fakeData;
   private int currentSegmentIndex;
   private long bytesRemaining;
 
-  private FakeDataSource(boolean simulateUnknownLength, ArrayList<Segment> segments) {
-    this.simulateUnknownLength = simulateUnknownLength;
-    this.segments = segments;
-    long totalLength = 0;
-    for (Segment segment : segments) {
-      totalLength += segment.length;
-    }
-    this.totalLength = totalLength;
-    openedDataSpecs = new ArrayList<>();
+  public FakeDataSource() {
+    this(new FakeDataSet());
+  }
+
+  public FakeDataSource(FakeDataSet fakeDataSet) {
+    this(fakeDataSet, /* isNetwork= */ false);
+  }
+
+  public FakeDataSource(FakeDataSet fakeDataSet, boolean isNetwork) {
+    super(isNetwork);
+    Assertions.checkNotNull(fakeDataSet);
+    this.fakeDataSet = fakeDataSet;
+    this.openedDataSpecs = new ArrayList<>();
+  }
+
+  public final FakeDataSet getDataSet() {
+    return fakeDataSet;
   }
 
   @Override
-  public long open(DataSpec dataSpec) throws IOException {
-    Assertions.checkState(!opened);
+  public final long open(DataSpec dataSpec) throws IOException {
+    Assertions.checkState(!openCalled);
+    openCalled = true;
+
     // DataSpec requires a matching close call even if open fails.
-    opened = true;
     uri = dataSpec.uri;
     openedDataSpecs.add(dataSpec);
+
+    transferInitializing(dataSpec);
+    FakeData fakeData = fakeDataSet.getData(dataSpec.uri.toString());
+    if (fakeData == null) {
+      throw new IOException("Data not found: " + dataSpec.uri);
+    }
+    this.fakeData = fakeData;
+
+    long totalLength = 0;
+    for (Segment segment : fakeData.getSegments()) {
+      totalLength += segment.length;
+    }
+
+    if (totalLength == 0) {
+      throw new IOException("Data is empty: " + dataSpec.uri);
+    }
+
     // If the source knows that the request is unsatisfiable then fail.
     if (dataSpec.position >= totalLength || (dataSpec.length != C.LENGTH_UNSET
         && (dataSpec.position + dataSpec.length > totalLength))) {
@@ -78,20 +126,21 @@ public final class FakeDataSource implements DataSource {
     boolean findingCurrentSegmentIndex = true;
     currentSegmentIndex = 0;
     int scannedLength = 0;
-    for (Segment segment : segments) {
-      segment.bytesRead =
-          (int) Math.min(Math.max(0, dataSpec.position - scannedLength), segment.length);
+    for (Segment segment : fakeData.getSegments()) {
+      segment.bytesRead = (int) min(max(0, dataSpec.position - scannedLength), segment.length);
       scannedLength += segment.length;
       findingCurrentSegmentIndex &= segment.isErrorSegment() ? segment.exceptionCleared
-          : segment.bytesRead == segment.length;
+          : (!segment.isActionSegment() && segment.bytesRead == segment.length);
       if (findingCurrentSegmentIndex) {
         currentSegmentIndex++;
       }
     }
+    sourceOpened = true;
+    transferStarted(dataSpec);
     // Configure bytesRemaining, and return.
     if (dataSpec.length == C.LENGTH_UNSET) {
       bytesRemaining = totalLength - dataSpec.position;
-      return simulateUnknownLength ? C.LENGTH_UNSET : bytesRemaining;
+      return fakeData.isSimulatingUnknownLength() ? C.LENGTH_UNSET : bytesRemaining;
     } else {
       bytesRemaining = dataSpec.length;
       return bytesRemaining;
@@ -99,27 +148,36 @@ public final class FakeDataSource implements DataSource {
   }
 
   @Override
-  public int read(byte[] buffer, int offset, int readLength) throws IOException {
-    Assertions.checkState(opened);
+  public final int read(byte[] buffer, int offset, int readLength) throws IOException {
+    Assertions.checkState(sourceOpened);
     while (true) {
-      if (currentSegmentIndex == segments.size() || bytesRemaining == 0) {
+      FakeData fakeData = Util.castNonNull(this.fakeData);
+      if (currentSegmentIndex == fakeData.getSegments().size() || bytesRemaining == 0) {
         return C.RESULT_END_OF_INPUT;
       }
-      Segment current = segments.get(currentSegmentIndex);
+      Segment current = fakeData.getSegments().get(currentSegmentIndex);
       if (current.isErrorSegment()) {
         if (!current.exceptionCleared) {
           current.exceptionThrown = true;
-          throw (IOException) current.exception.fillInStackTrace();
+          throw (IOException) Util.castNonNull(current.exception).fillInStackTrace();
         } else {
           currentSegmentIndex++;
         }
+      } else if (current.isActionSegment()) {
+        currentSegmentIndex++;
+        Util.castNonNull(current.action).run();
       } else {
         // Read at most bytesRemaining.
-        readLength = (int) Math.min(readLength, bytesRemaining);
+        readLength = (int) min(readLength, bytesRemaining);
         // Do not allow crossing of the segment boundary.
-        readLength = Math.min(readLength, current.length - current.bytesRead);
+        readLength = min(readLength, current.length - current.bytesRead);
         // Perform the read and return.
-        System.arraycopy(current.data, current.bytesRead, buffer, offset, readLength);
+        Assertions.checkArgument(buffer.length - offset >= readLength);
+        if (current.data != null) {
+          System.arraycopy(current.data, current.bytesRead, buffer, offset, readLength);
+        }
+        onDataRead(readLength);
+        bytesTransferred(readLength);
         bytesRemaining -= readLength;
         current.bytesRead += readLength;
         if (current.bytesRead == current.length) {
@@ -131,100 +189,46 @@ public final class FakeDataSource implements DataSource {
   }
 
   @Override
-  public Uri getUri() {
+  @Nullable
+  public final Uri getUri() {
     return uri;
   }
 
   @Override
-  public void close() throws IOException {
-    Assertions.checkState(opened);
-    opened = false;
+  public final void close() {
+    Assertions.checkState(openCalled);
+    openCalled = false;
     uri = null;
-    if (currentSegmentIndex < segments.size()) {
-      Segment current = segments.get(currentSegmentIndex);
+    if (fakeData != null && currentSegmentIndex < fakeData.getSegments().size()) {
+      Segment current = fakeData.getSegments().get(currentSegmentIndex);
       if (current.isErrorSegment() && current.exceptionThrown) {
         current.exceptionCleared = true;
       }
     }
+    if (sourceOpened) {
+      sourceOpened = false;
+      transferEnded();
+    }
+    fakeData = null;
   }
 
   /**
    * Returns the {@link DataSpec} instances passed to {@link #open(DataSpec)} since the last call to
    * this method.
    */
-  public DataSpec[] getAndClearOpenedDataSpecs() {
-    DataSpec[] dataSpecs = new DataSpec[openedDataSpecs.size()];
-    openedDataSpecs.toArray(dataSpecs);
+  public final DataSpec[] getAndClearOpenedDataSpecs() {
+    DataSpec[] dataSpecs = openedDataSpecs.toArray(new DataSpec[0]);
     openedDataSpecs.clear();
     return dataSpecs;
   }
 
-  private static class Segment {
-
-    public final IOException exception;
-    public final byte[] data;
-    public final int length;
-
-    private boolean exceptionThrown;
-    private boolean exceptionCleared;
-    private int bytesRead;
-
-    public Segment(byte[] data, IOException exception) {
-      this.data = data;
-      this.exception = exception;
-      length = data != null ? data.length : 0;
-    }
-
-    public boolean isErrorSegment() {
-      return exception != null;
-    }
-
+  /** Returns whether the data source is currently opened. */
+  public final boolean isOpened() {
+    return sourceOpened;
   }
 
-  /**
-   * Builder of {@link FakeDataSource} instances.
-   */
-  public static final class Builder {
-
-    private final ArrayList<Segment> segments;
-    private boolean simulateUnknownLength;
-
-    public Builder() {
-      segments = new ArrayList<>();
-    }
-
-    /**
-     * When set, {@link FakeDataSource#open(DataSpec)} will behave as though the source is unable to
-     * determine the length of the underlying data. Hence the return value will always be equal to
-     * the {@link DataSpec#length} of the argument, including the case where the length is equal to
-     * {@link C#LENGTH_UNSET}.
-     */
-    public Builder setSimulateUnknownLength(boolean simulateUnknownLength) {
-      this.simulateUnknownLength = simulateUnknownLength;
-      return this;
-    }
-
-    /**
-     * Appends to the underlying data.
-     */
-    public Builder appendReadData(byte[] data) {
-      Assertions.checkState(data != null && data.length > 0);
-      segments.add(new Segment(data, null));
-      return this;
-    }
-
-    /**
-     * Appends an error in the underlying data.
-     */
-    public Builder appendReadError(IOException exception) {
-      segments.add(new Segment(null, exception));
-      return this;
-    }
-
-    public FakeDataSource build() {
-      return new FakeDataSource(simulateUnknownLength, segments);
-    }
-
+  protected void onDataRead(int bytesRead) throws IOException {
+    // Do nothing. Can be overridden.
   }
 
 }

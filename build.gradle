@@ -11,27 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
     repositories {
-        mavenCentral()
+        google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.2'
-        classpath 'com.novoda:bintray-release:0.3.4'
+        classpath 'com.android.tools.build:gradle:4.0.0'
+        classpath 'com.novoda:bintray-release:0.9.1'
+        classpath 'com.google.android.gms:strict-version-matcher-plugin:1.2.1'
     }
 }
-
 allprojects {
     repositories {
-        mavenCentral()
+        google()
+        jcenter()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
     }
     project.ext {
-        compileSdkVersion=24
-        targetSdkVersion=24
-        buildToolsVersion='23.0.3'
+        exoplayerPublishEnabled = false
     }
+    if (it.hasProperty('externalBuildDir')) {
+        if (!new File(externalBuildDir).isAbsolute()) {
+            externalBuildDir = new File(rootDir, externalBuildDir)
+        }
+        buildDir = "${externalBuildDir}/${project.name}"
+    }
+    group = 'com.google.android.exoplayer'
 }
+
+apply from: 'javadoc_combined.gradle'
