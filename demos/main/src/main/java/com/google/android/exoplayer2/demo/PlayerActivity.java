@@ -59,11 +59,14 @@ import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.util.ErrorMessageProvider;
 import com.google.android.exoplayer2.util.EventLogger;
+import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
@@ -274,6 +277,7 @@ public class PlayerActivity extends AppCompatActivity
 
   /** @return Whether initialization was successful. */
   protected boolean initializePlayer() {
+    Log.i("ISSUE #7942", "initializePlayer-start    " + new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
     if (player == null) {
       Intent intent = getIntent();
 
@@ -313,8 +317,10 @@ public class PlayerActivity extends AppCompatActivity
       player.seekTo(startWindow, startPosition);
     }
     player.setMediaItems(mediaItems, /* resetPosition= */ !haveStartPosition);
+    player.seekTo(3600000L); // case: resume playback at 1hr
     player.prepare();
     updateButtonVisibility();
+    Log.i("ISSUE #7942", "initializePlayer-end      " + new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
     return true;
   }
 
@@ -467,6 +473,7 @@ public class PlayerActivity extends AppCompatActivity
         showControls();
       }
       updateButtonVisibility();
+      Log.i("ISSUE #7942", "onPlaybackStateChanged(" + playbackState + ") " + new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()) + " (2 = preparing | 3 = buffering)");
     }
 
     @Override

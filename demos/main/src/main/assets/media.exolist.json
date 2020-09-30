@@ -275,6 +275,10 @@
     "name": "Misc",
     "samples": [
       {
+        "name": "Issue #7942 - Podcast (MP3)",
+        "uri": "https://traffic.libsyn.com/atpfm/atp397.mp3"
+      },
+      {
         "name": "Dizzy (MP4)",
         "uri": "https://html5demos.com/assets/dizzy.mp4"
       },
